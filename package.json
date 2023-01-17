@@ -1,0 +1,23 @@
+{
+  "name": "clipboarding",
+  "version": "1.0.0",
+  "description": "D:",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "electron ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/typesafety/clipboarding.git"
+  },
+  "author": "typesafety",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/typesafety/clipboarding/issues"
+  },
+  "homepage": "https://github.com/typesafety/clipboarding#readme",
+  "devDependencies": {
+    "electron": "^22.0.2"
+  }
+}
