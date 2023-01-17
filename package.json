@@ -18,7 +18,8 @@
   },
   "homepage": "https://github.com/typesafety/clipboarding#readme",
   "devDependencies": {
-    "electron": "^22.0.2"
+    "electron": "^22.0.2",
+    "eslint": "^8.32.0"
   },
   "dependencies": {
     "ws": "^8.12.0"

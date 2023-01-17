@@ -7,7 +7,6 @@ const POLLING_INTERVAL = 100
 // WebSocketServer options.
 // See https://github.com/websockets/ws/blob/HEAD/doc/ws.md#serverclients
 const WEBSOCKET_SERVER_OPTIONS = {
-    clientTracking: true,
     port: 8080,
 }
 
@@ -74,7 +73,7 @@ function startWs() {
 
     const { address, port, family } = wss.address()
     console.log(
-        `Started new websocket server: ` +
+        'Started new websocket server: ' +
         `family=${family} address=${address} port=${port}`
     )
     return wss
@@ -85,7 +84,7 @@ function startWs() {
  */
 function main() {
     console.log('Starting.')
-    const wss = startWs()
+    startWs()
 }
 
 app.whenReady().then(main)
