@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>clipboarding</title>
+
+  <style>
+    body {
+      background-color: darkslategray;
+      color: beige;
+      font-size: 18px;
+      line-height: 1.6;
+      margin: 40px auto;
+      max-width: 800px;
+      min-height: 2000px;
+      padding:0 10px;
+    }
+  </style>
+
+  <script>
+    const WS_HOST = 'ws://localhost:8080'
+    const ws = new WebSocket(WS_HOST)
+
+    ws.onopen = event => {
+      console.log(`Opening connection to ${WS_HOST}`)
+    }
+
+    ws.onmessage = event => {
+      // We receive a message from the server when the clipboard content
+      // changes; update the DOM with the new text.
+      const clipboardText = event.data
+      const textElem = document.getElementById('clipboard')
+      textElem.innerText = clipboardText
+    }
+  </script>
+</head>
+
+<body>
+  <div style="text-align: center;">
+    <h1>clipboarding</h1>
+    <div>
+      <p id="clipboard">text</p>
+    </div>
+  </div>
+</body>
+
+</html>

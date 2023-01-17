@@ -1,16 +1,14 @@
 const { app, clipboard } = require('electron')
+const { WebSocketServer } = require('ws')
 
 // How often the clipboard should be checked for changes, in milliseconds.
 const POLLING_INTERVAL = 100
 
-/**
- * TODO: Do something useful in here.
- */
-function sendText(text) {
-    if (text === 'exit') {
-        return null
-    }
-    console.log(`Sending "${text}".`)
+// WebSocketServer options.
+// See https://github.com/websockets/ws/blob/HEAD/doc/ws.md#serverclients
+const WEBSOCKET_SERVER_OPTIONS = {
+    clientTracking: true,
+    port: 8080,
 }
 
 /**
@@ -50,7 +48,6 @@ async function pollClipboard(callback) {
             continue
         }
 
-        console.log('Clipboard text changed.')
         if (callback) {
             const res = callback(newText)
             if (res === null) {
@@ -62,11 +59,33 @@ async function pollClipboard(callback) {
 }
 
 /**
+ * Start the Websocket server.
+ *
+ * @returns {WebSocketServer} - The created WebSocketServer object.
+ */
+function startWs() {
+    const wss = new WebSocketServer(WEBSOCKET_SERVER_OPTIONS)
+
+    wss.on('connection', function connection(ws, request) {
+        // Start clipboard polling for incoming connections.
+        console.log(`New connection: ${JSON.stringify(request.headers)}`)
+        pollClipboard(text => ws.send(text))
+    })
+
+    const { address, port, family } = wss.address()
+    console.log(
+        `Started new websocket server: ` +
+        `family=${family} address=${address} port=${port}`
+    )
+    return wss
+}
+
+/**
  * Main entry point to the application.
  */
 function main() {
-    pollClipboard(sendText)
-    console.log('Polling finished.')
+    console.log('Starting.')
+    const wss = startWs()
 }
 
 app.whenReady().then(main)
