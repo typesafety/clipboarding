@@ -1,12 +1,14 @@
-const { app, clipboard } = require('electron')
-const { WebSocketServer } = require('ws')
+const electron = require('electron')
+const fs = require('fs')
+const http = require('http')
+const ws = require('ws')
 
 // How often the clipboard should be checked for changes, in milliseconds.
 const POLLING_INTERVAL = 100
 
-// WebSocketServer options.
-// See https://github.com/websockets/ws/blob/HEAD/doc/ws.md#serverclients
-const WEBSOCKET_SERVER_OPTIONS = {
+// http.Server options.
+// See https://nodejs.org/api/http.html#httpcreateserveroptions-requestlistener
+const HTTP_SERVER_OPTIONS = {
     port: 8080,
 }
 
@@ -16,8 +18,8 @@ const WEBSOCKET_SERVER_OPTIONS = {
  * @param {Function} callback - Optional.  Each time the clipboard is polled and
  * a change is detected, this function will be called on the contents of the
  * clipboard.  The callback takes a single String parameter.  If the callback
- * returns `null`, the loop exits.  If the callback is not falsey, it will not
- * be called and the loop will run forever.
+ * returns `null`, the loop exits.  If the callback is falsy, it will not be
+ * called and the loop will run forever.
  */
 async function pollClipboard(callback) {
     console.log(`Polling the clipboard every ${POLLING_INTERVAL} milliseconds.`)
@@ -29,7 +31,7 @@ async function pollClipboard(callback) {
     function checkClipboard() {
         return new Promise(resolve => {
             setTimeout(() => {
-                const text = clipboard.readText()
+                const text = electron.clipboard.readText()
                 if (text !== buffer) {
                     buffer = text
                     resolve(buffer)
@@ -58,25 +60,43 @@ async function pollClipboard(callback) {
 }
 
 /**
- * Start the Websocket server.
+ * Start a web server with a websocket server.
  *
- * @returns {WebSocketServer} - The created WebSocketServer object.
+ * @returns {http.Server} - The created Server object.
  */
-function startWs() {
-    const wss = new WebSocketServer(WEBSOCKET_SERVER_OPTIONS)
+function startServer() {
+    // Set up a HTTP web server with websocket listeners.
+    const server = http.createServer(HTTP_SERVER_OPTIONS)
+    const wss = new ws.WebSocketServer({ server })
 
+    // Websocket listeners.
     wss.on('connection', function connection(ws, request) {
         // Start clipboard polling for incoming connections.
-        console.log(`New connection: ${JSON.stringify(request.headers)}`)
+        console.log(`Websocket connection: ${JSON.stringify(request.headers)}`)
         pollClipboard(text => ws.send(text))
     })
 
-    const { address, port, family } = wss.address()
+    // HTTP server listeners.
+    server.on('request', (req, res) => {
+        console.log(`HTTP ${req.method}: ${JSON.stringify(req.headers)}`)
+        fs.readFile('./index.html', (_err, data) => {
+            res.statusCode = 200
+            res.setHeader('Content-Type', 'text/html')
+            res.setHeader('Content-Length', data.length)
+            res.write(data)
+            res.end()
+        })
+    })
+
+    server.listen(HTTP_SERVER_OPTIONS.port)
+
+    const { address, port, family } = server.address()
     console.log(
-        'Started new websocket server: ' +
+        'Web server is listening: ' +
         `family=${family} address=${address} port=${port}`
     )
-    return wss
+
+    return server
 }
 
 /**
@@ -84,7 +104,7 @@ function startWs() {
  */
 function main() {
     console.log('Starting.')
-    startWs()
+    startServer()
 }
 
-app.whenReady().then(main)
+electron.app.whenReady().then(main)
