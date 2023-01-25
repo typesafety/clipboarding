@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>clipboarding</title>
+
+  <style>
+    body {
+      background-color: black;
+      color: beige;
+    }
+  </style>
+
+  <script>
+    window.api.onClipboardChanged((_event, message) => {
+      const clipboard = document.getElementById('clipboard')
+      clipboard.innerHTML = message
+    })
+  </script>
+
+  <body>
+    <b>Last clipboard change:</b>
+    <p id="clipboard"></p>
+  </body>
+</html>

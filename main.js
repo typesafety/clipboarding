@@ -2,6 +2,7 @@ const assert = require('node:assert/strict')
 const electron = require('electron')
 const fs = require('fs')
 const http = require('http')
+const path = require('node:path')
 const process = require('node:process')
 const ws = require('ws')
 
@@ -14,6 +15,11 @@ const APP_SETTINGS = {
     // elsewhere (CLI args).
     port: 8080
 }
+
+const CLIENT_PATH = path.join(__dirname, 'client.html')
+const ICON_PATH = path.join(__dirname, 'icon.ico')
+const PRELOAD_PATH = path.join(__dirname, 'preload.js')
+const WINDOW_PATH = path.join(__dirname, 'window.html')
 
 /**
  * Start a loop that polls the clipboard every POLLING_INTERVAL milliseconds.
@@ -56,6 +62,9 @@ async function pollClipboard(pollingInterval, callback) {
             continue
         }
 
+        console.log('new message')
+        window.webContents.send('clipboard-changed', newText)
+
         if (callback) {
             const res = callback(newText)
             if (res === null) {
@@ -90,7 +99,9 @@ function startServer(httpServerOptions) {
         console.log(`HTTP ${req.method}: ${JSON.stringify(req.headers)}`)
 
         if (req.method === 'GET') {
-            fs.readFile('./index.html', { encoding: 'utf-8' }, (_err, data) => {
+            // Encoding is needed to get the data as a string so that we can
+            // use string.replace().
+            fs.readFile(CLIENT_PATH, 'utf-8', (_err, data) => {
                 const replaced = data.replace(
                     '{{PLACEHOLDER:WS_PORT}}',
                     APP_SETTINGS.port)
@@ -149,14 +160,39 @@ function getArgs() {
  * Main entry point to the application.
  */
 function main() {
+    // Read CLI args and set up global settings.
     const args = getArgs()
     Object.assign(APP_SETTINGS, args)
     console.log(`APP_SETTINGS: ${JSON.stringify(APP_SETTINGS)}`)
 
+    // Start the server and open a tab in the system browser.
+    //
+    // Also open an Electron BrowserWindow to have something visual attached to
+    // the process (show some debug output, dies when the window is closed etc.)
     console.log('Starting server.')
     startServer({ port: APP_SETTINGS.port })
-    console.log('Starting client in browser.')
+
+    console.log('Starting client in web browser.')
     startClient(APP_SETTINGS.port)
+
+    console.log('Creating BrowserWindow.')
+    window = new electron.BrowserWindow({
+        autoHideMenuBar: true,
+        fullscreenable: false,
+        width: 320,
+        height: 160,
+        minWidth: 320,
+        minHeight: 160,
+        icon: ICON_PATH,
+        webPreferences: {
+            preload: PRELOAD_PATH,
+        },
+    })
+    window.loadFile(WINDOW_PATH)
 }
+
+// Define here for global access, but we can't instantiate a BrowserWindow until
+// the app is "ready".
+let window
 
 electron.app.whenReady().then(main)
