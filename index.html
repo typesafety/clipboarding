@@ -19,7 +19,9 @@
   </style>
 
   <script>
-    const WS_HOST = 'ws://localhost:8080'
+    // {{WS_PORT}} is a placeholder to be replaced with an actual port number by
+    // the server before serving.
+    const WS_HOST = 'ws://localhost:{{PLACEHOLDER:WS_PORT}}'
     const ws = new WebSocket(WS_HOST)
 
     ws.onopen = event => {
